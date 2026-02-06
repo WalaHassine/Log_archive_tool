@@ -71,3 +71,19 @@ case $option in
         ;;
 esac
 done
+
+Setup_cron_job(){
+    read -r -p " Do you want to set up a cron job to run this script automatically? (y/n): " setup_cron
+    if [[ "$setup_cron" == "y" || "$setup_cron" == "Y" ]]; then
+        echo "Setting up a cron job..."
+        crontab -l > mycron
+        echo "0 2 * * * /usr/local/bin/Log.sh" >> mycron
+        crontab mycron
+        rm mycron
+        echo "Cron job set up successfully."
+    else
+        echo "Cron job setup skipped."
+    fi
+}
+
+Setup_cron_job
