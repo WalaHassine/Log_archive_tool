@@ -77,7 +77,7 @@ Setup_cron_job(){
     if [[ "$setup_cron" == "y" || "$setup_cron" == "Y" ]]; then
         echo "Setting up a cron job..."
         crontab -l > mycron
-        echo "0 2 * * * /usr/local/bin/Log.sh" >> mycron
+        echo "0 18 * * * /usr/local/bin/Log.sh" >> mycron
         crontab mycron
         rm mycron
         echo "Cron job set up successfully."

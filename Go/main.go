@@ -8,6 +8,7 @@ import (
 	"io"
 	"archive/tar"
 	"compress/gzip"
+
 )
 func main() {
 
@@ -16,30 +17,34 @@ func main() {
 
 	// Parse Command-Line Argument
 	LogDir := flag.String("logdir", "", "Directory containing log files")
+	DaysToKeep := flag.Int("days", 30, "Number of days to keep logs before archiving and deleting")
 	flag.Parse()
 
-	// Validate Log Directory (default to "var/logs" if not provided)
+	// Validate Log Directory (ask user if not provided)
 	if *LogDir == "" {
-		*LogDir = "var/logs"
-		fmt.Println(" No log directory provided. Using default:", *LogDir)
-		
+		fmt.Print("No log directory provided. Enter log directory: ")
+		fmt.Scanln(LogDir)
+		if *LogDir == "" {
+			*LogDir = "var/logs"
+			fmt.Println("Using default:", *LogDir)
+		}
 	}
 	
 	// Create Archive Name with Timestamp
 	timestamp := time.Now().Format("20060102_150405") 
 	archiveName := fmt.Sprintf("logs_archive_%s.tar.gz", timestamp) 
-	archivePath := filepath.Join(*LogDir, archiveName) 
+	archiveDir := filepath.Join(*LogDir, "archives")
+	archivePath := filepath.Join(archiveDir, archiveName)
 
 	// Ensure Archive Directory Exists
-	err := os.MkdirAll(archivePath, 0755)
+	err := os.MkdirAll(archiveDir, 0755)
 	if err != nil {
 		fmt.Printf("Error: Archive directory could not be created: %v\n", err)
 		return
 	}
 
 	// Compress Logs into Archive
-	archiveFullPath := filepath.Join(archivePath, archiveName)
-	err = compressLogs(*logDir, archiveFullPath, archiveName)
+	err = compressLogs(*LogDir, archivePath, archiveName)
 
 	if err != nil {
 		noPermErr := fmt.Sprintf("open %s/%s: permission denied", archivePath, archiveName)
@@ -54,19 +59,70 @@ func main() {
 	}
 
 	// the process of logging in details
-	logFilePath := filepath.Join(*logDir, "archive_log.txt")
-	logEntry := fmt.Sprintf("%s: Archived logs to %s\n", timestamp, archiveName)
+	logFilePath := filepath.Join(*LogDir, "archive_log.txt")
+	logEntry := fmt.Sprintf("%s: Archived logs to %s\n", timestamp, archivePath)
 	err = appendToFile(logFilePath, logEntry)
 	if err != nil {
 		fmt.Printf("Error: Could not write to log file: %v\n", err)
 		return
 	}
-	fmt.Printf("Archiving completed: %s\n", archiveFullPath)
+	fmt.Printf("Archiving completed: %s\n", archivePath)
+
+	// Delete logs older than specified days
+	cutoff := time.Now().AddDate(0, 0, -*DaysToKeep)
+	err = filepath.Walk(*LogDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			if filepath.Base(path) == "archives" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if filepath.Base(path) == "archive_log.txt" {
+			return nil
+		}
+		if info.ModTime().Before(cutoff) {
+			return os.Remove(path)
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Printf("Error: Could not delete old logs: %v\n", err)
+		return
+	}
+	fmt.Printf("Deleted logs older than %d days\n", *DaysToKeep)
+
+
+
+func compressLogs(LogDir, archivePath, archiveName string) error {
+	file, err := os.Create(archivePath)
+	if err != nil {
+		return err
 }
-
-
-
-func compressLogs(logDir, archivePath, archiveName string) error {}
+	defer file.Close()
+	gw := gzip.NewWriter(file)
+	defer gw.Close()
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+	
+	err = filepath.Walk(LogDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			if filepath.Base(path) == "archives" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if filepath.Base(path) == "archive_log.txt" {
+			return nil
+		}
+		return addFileToTarGz(tw, path, LogDir)
+	} )
+	return err}
 func addFileToTarGz(tw *tar.Writer, filePath, baseDir string) error {
 		file, err := os.Open(filePath)
 	if err != nil {
