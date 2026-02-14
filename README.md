@@ -3,7 +3,7 @@
 # Description
 This CLI tool compresses and archives log files of a Linux server.
 This tool is created using different approachs and solutions :
-1. GoLang (Go/main.go)
+# 1. GoLang (Go/main.go)
 ------------------------------------------------
 **Overview**  
 A command-line tool written in Go that archives log files into a compressed tar.gz format with timestamped naming, using Go's standard library for compression and file handling.
@@ -43,7 +43,7 @@ A command-line tool written in Go that archives log files into a compressed tar.
   - Archive: `logs_archive_<timestamp>.tar.gz` in the specified log directory.  
   - Log: `archive_log.txt` with entries like "timestamp: Archived logs to archive_name".  
 
-2. Shell Script (Shell/Log.sh)
+# 2. Shell Script (Shell/Log.sh)
 ------------------------------------------------
 **Overview**  
 An interactive bash script that provides a menu-driven interface for configuring log archiving parameters and executing the process, with support for automated scheduling via cron jobs.
@@ -82,7 +82,7 @@ An interactive bash script that provides a menu-driven interface for configuring
   - Log: Appends to `archive_log.txt` in the archive directory with archiving details.  
   - Cron: Updates user's crontab for automation (if selected).  
 
-3. Python (Python/Log.py)
+# 3. Python (Python/Log.py)
 ------------------------------------------------
 **Overview**  
 (Not implemented ).  
